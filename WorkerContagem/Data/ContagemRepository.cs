@@ -9,13 +9,10 @@ namespace WorkerContagem.Data
     public class ContagemRepository
     {
         private readonly IConfiguration _configuration;
-        private readonly TimeZoneInfo _timeZoneBrasil;
 
         public ContagemRepository(IConfiguration configuration)
         {
             _configuration = configuration;
-            _timeZoneBrasil = TimeZoneInfo.FindSystemTimeZoneById(
-                "E. South America Standard Time");
         }
 
         public void Save(ResultadoContador resultado)
@@ -24,10 +21,11 @@ namespace WorkerContagem.Data
                 _configuration.GetConnectionString("BaseContagem"));
             conexao.Insert<HistoricoContagem>(new ()
             {
-                DataProcessamento = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, _timeZoneBrasil),
+                DataProcessamento = DateTime.UtcNow.AddHours(-3), // Horário padrão do Brasil
                 ValorAtual = resultado.ValorAtual,
                 Producer = resultado.Producer,
                 Consumer = Environment.MachineName,
+                ConsumerGroup = _configuration["ApacheKafka:GroupId"],
                 Topico = _configuration["ApacheKafka:Topic"],
                 Mensagem = resultado.Mensagem,
                 Kernel = resultado.Kernel,

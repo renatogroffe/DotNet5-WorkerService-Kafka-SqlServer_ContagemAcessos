@@ -1,3 +1,4 @@
+using System;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -6,6 +7,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Confluent.Kafka;
 using WorkerContagem.Data;
+using WorkerContagem.Extensions;
 using WorkerContagem.Models;
 
 namespace WorkerContagem
@@ -30,17 +32,7 @@ namespace WorkerContagem
             _topico = _configuration["ApacheKafka:Topic"];
             _groupId = _configuration["ApacheKafka:GroupId"];
 
-            _consumer = new ConsumerBuilder<Ignore, string>(
-                new ConsumerConfig()
-                {
-                    BootstrapServers = configuration["ApacheKafka:Host"],
-                    SecurityProtocol = SecurityProtocol.SaslSsl,
-                    SaslMechanism = SaslMechanism.Plain,
-                    SaslUsername = configuration["ApacheKafka:Username"],
-                    SaslPassword = configuration["ApacheKafka:Password"],
-                    GroupId = _groupId,
-                    AutoOffsetReset = AutoOffsetReset.Earliest
-                }).Build();
+            _consumer = KafkaExtensions.CreateConsumer(_configuration);
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -85,8 +77,15 @@ namespace WorkerContagem
 
             if (resultado is not null)
             {
-                _repository.Save(resultado);
-                _logger.LogInformation("Resultado registrado com sucesso!");
+                try
+                {
+                    _repository.Save(resultado);
+                    _logger.LogInformation("Resultado registrado com sucesso!");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError($"Erro durante a gravação: {ex.Message}");
+                }
             }
         }
     }
