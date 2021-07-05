@@ -15,7 +15,7 @@ namespace WorkerContagem.Data
             _configuration = configuration;
         }
 
-        public void Save(ResultadoContador resultado)
+        public void Save(ResultadoContador resultado, int partition)
         {
             using var conexao = new SqlConnection(
                 _configuration.GetConnectionString("BaseContagem"));
@@ -27,6 +27,7 @@ namespace WorkerContagem.Data
                 Consumer = Environment.MachineName,
                 ConsumerGroup = _configuration["ApacheKafka:GroupId"],
                 Topico = _configuration["ApacheKafka:Topic"],
+                Particao = partition,
                 Mensagem = resultado.Mensagem,
                 Kernel = resultado.Kernel,
                 TargetFramework = resultado.TargetFramework
